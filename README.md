@@ -2,7 +2,9 @@
 
 This project exposes the [deckofcardsapi.com](https://deckofcardsapi.com/) endpoints via an MCP server built with [FastMCP](https://gofastmcp.com/).
 
-### Setup
+Cloud Hosting Link: [https://fastmcp.cloud/app/deck-of-cards](https://fastmcp.cloud/app/deck-of-cards)
+
+### Local Setup
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager.
 - Install dependencies: `uv sync`
 - Run the server: `uv run python main.py`
