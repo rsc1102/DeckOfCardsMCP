@@ -8,7 +8,7 @@ This project exposes the [deckofcardsapi.com](https://deckofcardsapi.com/) endpo
 - Run the server: `uv run python main.py`
 
 ### Available tools
-- `create_deck`: Create a new deck, optionally enabling jokers or combining decks.
+- `create_deck`: Create a new deck, optionally combining multiple decks.
 - `create_partial_deck`: Build a deck limited to specific card codes.
 - `shuffle_deck`: Shuffle an existing deck, with the option to only shuffle remaining cards.
 - `draw_cards`: Draw one or more cards from a deck.
