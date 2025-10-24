@@ -9,12 +9,16 @@ from utils import (
     _normalize_cards,
     _validate_pile_name,
 )
-from output_schemas import (
+from pydantic_models import (
     DeckSchema,
     DrawCardSchema,
-    PileOutputSchema,
     ReturnCardSchema,
-    PileSchema,
+    AddToPileSchema,
+    DrawCardFromPileSchema,
+    ShufflePileSchema,
+    ListPilesSchema,
+    PileWithoutCardDetailsSchema,
+    PileWithCardDetailsSchema,
 )
 
 server = FastMCP(
@@ -108,7 +112,7 @@ async def get_deck_state(deck_id: str) -> DeckSchema:
 )
 async def add_to_pile(
     deck_id: str, pile_name: str, cards: list[str]
-) -> PileOutputSchema:
+) -> AddToPileSchema:
     if not deck_id:
         raise ToolError("A deck_id is required to add cards to a pile.")
     if not pile_name:
@@ -121,12 +125,16 @@ async def add_to_pile(
     normalized_cards = _normalize_cards(cards)
     params = {"cards": ",".join(normalized_cards)}
     data = await _api_get(f"{deck_id}/pile/{pile_name}/add/", params=params)
-    pile_info = data.get("piles", {}).get(pile_name, {})
+    pile_info = data.get("piles", {})
+    piles: dict[str, PileWithoutCardDetailsSchema] = {}
+    for key, val in pile_info.items():
+        piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
+
     deck_summary = _deck_summary(data)
-    return PileOutputSchema(
+    return AddToPileSchema(
         deck_id=deck_summary.deck_id,
         remaining=deck_summary.remaining,
-        pile=PileSchema(name=pile_name, remaining=pile_info["remaining"]),
+        piles=piles,
     )
 
 
@@ -142,7 +150,7 @@ async def draw_from_pile(
     cards: list[str] | None = None,
     count: int | None = None,
     position: Literal["top", "bottom", "random"] = "top",
-) -> PileOutputSchema:
+) -> DrawCardFromPileSchema:
     if not deck_id:
         raise ToolError("A deck_id is required to draw from a pile.")
     if not pile_name:
@@ -153,9 +161,6 @@ async def draw_from_pile(
     valid_positions = {"top", "bottom", "random"}
     if normalized_position not in valid_positions:
         raise ToolError("Position must be one of: 'top', 'bottom', or 'random'.")
-
-    if (cards is None or len(cards) == 0) and count is None:
-        raise ToolError("Provide either specific card codes or a count.")
 
     if cards is not None and count is not None:
         raise ToolError("Provide either specific card codes or a count, not both.")
@@ -182,17 +187,23 @@ async def draw_from_pile(
     path = "/".join(path_parts) + "/"
 
     data = await _api_get(path, params=params if params else None)
-    pile_info = data.get("piles", {}).get(pile_name, {})
+    pile_info = data.get("piles", {})
+    piles: dict[str, PileWithoutCardDetailsSchema] = {}
+    for key, val in pile_info.items():
+        piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
+
     deck_summary = _deck_summary(data)
-    return PileOutputSchema(
+    list_cards = _format_cards(data.get("cards"))
+    return DrawCardFromPileSchema(
         deck_id=deck_summary.deck_id,
         remaining=deck_summary.remaining,
-        pile=PileSchema(name=pile_name, remaining=pile_info["remaining"]),
+        piles=piles,
+        cards=list_cards,
     )
 
 
 @server.tool(description="List the cards currently stored in a pile.")
-async def list_pile_cards(deck_id: str, pile_name: str) -> PileOutputSchema:
+async def list_pile_cards(deck_id: str, pile_name: str) -> ListPilesSchema:
     if not deck_id:
         raise ToolError("A deck_id is required to inspect a pile.")
     if not pile_name:
@@ -200,18 +211,26 @@ async def list_pile_cards(deck_id: str, pile_name: str) -> PileOutputSchema:
     _validate_pile_name(pile_name)
 
     data = await _api_get(f"{deck_id}/pile/{pile_name}/list/")
-    pile_info = data.get("piles", {}).get(pile_name, {})
+    pile_info = data.get("piles", {})
+    piles: dict[str, PileWithoutCardDetailsSchema | PileWithCardDetailsSchema] = {}
+    for key, val in pile_info.items():
+        if "card" in val:
+            cards = _format_cards(val.get("cards"))
+            piles[key] = PileWithCardDetailsSchema(
+                remaining=val["remaining"], cards=cards
+            )
+        else:
+            piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
     deck_summary = _deck_summary(data)
-    cards = _format_cards(pile_info.get("cards"))
-    return PileOutputSchema(
+    return ListPilesSchema(
         deck_id=deck_summary.deck_id,
         remaining=deck_summary.remaining,
-        pile=PileSchema(name=pile_name, remaining=pile_info["remaining"], cards=cards),
+        piles=piles,
     )
 
 
 @server.tool(description="Shuffle the cards contained in a named pile.")
-async def shuffle_pile(deck_id: str, pile_name: str) -> PileOutputSchema:
+async def shuffle_pile(deck_id: str, pile_name: str) -> ShufflePileSchema:
     if not deck_id:
         raise ToolError("A deck_id is required to shuffle a pile.")
     if not pile_name:
@@ -219,12 +238,15 @@ async def shuffle_pile(deck_id: str, pile_name: str) -> PileOutputSchema:
     _validate_pile_name(pile_name)
 
     data = await _api_get(f"{deck_id}/pile/{pile_name}/shuffle/")
-    pile_info = data.get("piles", {}).get(pile_name, {})
+    pile_info = data.get("piles", {})
+    piles: dict[str, PileWithoutCardDetailsSchema] = {}
+    for key, val in pile_info.items():
+        piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
     deck_summary = _deck_summary(data)
-    return PileOutputSchema(
+    return ShufflePileSchema(
         deck_id=deck_summary.deck_id,
         remaining=deck_summary.remaining,
-        pile=PileSchema(name=pile_name, remaining=pile_info["remaining"]),
+        piles=piles,
     )
 
 
@@ -253,17 +275,16 @@ async def return_cards(
 
     data = await _api_get(path, params=params)
     deck_summary = _deck_summary(data)
-    pile = None
-
-    if pile_name and "piles" in data:
-        pile_info = data.get("piles", {}).get(pile_name, {})
-        pile = PileSchema(name=pile_name, remaining=pile_info["remaining"])
+    pile_info = data.get("piles", {})
+    piles: dict[str, PileWithoutCardDetailsSchema] = {}
+    for key, val in pile_info.items():
+        piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
     return ReturnCardSchema(
         deck_id=deck_summary.deck_id,
         remaining=deck_summary.remaining,
         shuffled=deck_summary.shuffled,
-        pile=pile,
+        piles=piles,
     )
 
 
