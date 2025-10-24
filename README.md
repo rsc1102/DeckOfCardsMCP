@@ -22,3 +22,7 @@ Cloud Hosting Link: [https://fastmcp.cloud/app/deck-of-cards](https://fastmcp.cl
 - `return_cards`: Return cards from the deck or a pile back to the main deck.
 
 All tools propagate Deck of Cards API errors as MCP `ToolError`s with descriptive messages.
+
+### Note
+1. Jokers are not supported.
+2. Pile names must be 1-32 characters using only letters, numbers, hyphen, or underscore.
