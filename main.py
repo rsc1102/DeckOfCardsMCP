@@ -214,7 +214,7 @@ async def list_pile_cards(deck_id: str, pile_name: str) -> ListPilesSchema:
     pile_info = data.get("piles", {})
     piles: dict[str, PileWithoutCardDetailsSchema | PileWithCardDetailsSchema] = {}
     for key, val in pile_info.items():
-        if "card" in val:
+        if "cards" in val:
             cards = _format_cards(val.get("cards"))
             piles[key] = PileWithCardDetailsSchema(
                 remaining=val["remaining"], cards=cards
