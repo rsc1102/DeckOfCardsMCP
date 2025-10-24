@@ -26,3 +26,4 @@ All tools propagate Deck of Cards API errors as MCP `ToolError`s with descriptiv
 ### Note
 1. Jokers are not supported.
 2. Pile names must be 1-32 characters using only letters, numbers, hyphen, or underscore.
+3. Piles do not work with multiple decks.
