@@ -302,7 +302,7 @@ async def return_cards(
 
 
 def main() -> None:
-    server.run(transport='stdio')
+    server.run(transport="sse")
 
 
 if __name__ == "__main__":
