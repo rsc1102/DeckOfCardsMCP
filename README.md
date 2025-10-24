@@ -1,0 +1,21 @@
+## Deck of Cards MCP Server
+
+This project exposes the [deckofcardsapi.com](https://deckofcardsapi.com/) endpoints via an MCP server built with [FastMCP](https://gofastmcp.com/).
+
+### Setup
+- Install dependencies: `uv sync`
+- Run the server: `uv run python main.py`
+
+### Available tools
+- `create_deck`: Create a new deck, optionally enabling jokers or combining decks.
+- `create_partial_deck`: Build a deck limited to specific card codes.
+- `shuffle_deck`: Shuffle an existing deck, with the option to only shuffle remaining cards.
+- `draw_cards`: Draw one or more cards from a deck.
+- `get_deck_state`: Retrieve the current deck metadata.
+- `add_to_pile`: Move specified cards into a named pile.
+- `draw_from_pile`: Draw explicit cards, or use `position` (`top`, `bottom`, `random`) with an optional `count`.
+- `list_pile_cards`: Inspect the cards stored in a pile.
+- `shuffle_pile`: Shuffle the cards stored in a pile.
+- `return_cards`: Return cards from the deck or a pile back to the main deck.
+
+All tools propagate Deck of Cards API errors as MCP `ToolError`s with descriptive messages.
