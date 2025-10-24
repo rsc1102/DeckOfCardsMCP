@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal
+from typing import Any, Literal
 
 import httpx
 from fastmcp import FastMCP
@@ -13,6 +13,27 @@ server = FastMCP(
         "Use the tools to create decks, shuffle them, draw cards, and manage piles."
     ),
 )
+
+def _normalize_cards(cards: list[str] | None) -> list[str]:
+    if not cards:
+        return []
+    allowed_values = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"}
+    allowed_suits = {"S", "D", "C", "H"}
+
+    normalized_cards: list[str] = []
+    for raw_code in cards:
+        code = raw_code.strip().upper()
+        if len(code) != 2:
+            raise ToolError(f"Invalid card code '{raw_code}': must be exactly two characters.")
+        value, suit = code[0], code[1]
+        if value not in allowed_values or suit not in allowed_suits:
+            raise ToolError(
+                "Invalid card code "
+                f"'{raw_code}': value must be one of {', '.join(sorted(allowed_values))}; "
+                f"suit must be one of {', '.join(sorted(allowed_suits))}."
+            )
+        normalized_cards.append(code)
+    return normalized_cards
 
 
 def _format_cards(cards: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -69,14 +90,12 @@ async def _api_get(path: str, params: dict[str, Any] | None = None) -> dict[str,
     return data
 
 
-@server.tool(description="Create a fresh deck. Optionally enable jokers or combine multiple decks.")
-async def create_deck(include_jokers: bool = False, deck_count: int = 1) -> dict[str, Any]:
+@server.tool(description="Create a fresh deck. Combine multiple decks with deck_count.")
+async def create_deck(deck_count: int = 1) -> dict[str, Any]:
     if deck_count < 1 or deck_count > 20:
         raise ToolError("Deck count must be between 1 and 20.")
 
     params: dict[str, Any] = {"deck_count": deck_count}
-    if include_jokers:
-        params["jokers_enabled"] = "true"
 
     data = await _api_get("new/", params=params)
     return _deck_summary(data)
@@ -88,27 +107,11 @@ async def create_deck(include_jokers: bool = False, deck_count: int = 1) -> dict
         "Cards should be provided as two-character codes (e.g. AS, 0H)."
     )
 )
-async def create_partial_deck(cards: List[str]) -> dict[str, Any]:
+async def create_partial_deck(cards: list[str]) -> dict[str, Any]:
     if not cards:
         raise ToolError("Provide at least one card code to build a partial deck.")
 
-    allowed_values = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"}
-    allowed_suits = {"S", "D", "C", "H"}
-
-    normalized_cards: list[str] = []
-    for raw_code in cards:
-        code = raw_code.strip().upper()
-        if len(code) != 2:
-            raise ToolError(f"Invalid card code '{raw_code}': must be exactly two characters.")
-        value, suit = code[0], code[1]
-        if value not in allowed_values or suit not in allowed_suits:
-            raise ToolError(
-                "Invalid card code "
-                f"'{raw_code}': value must be one of {', '.join(sorted(allowed_values))}; "
-                f"suit must be one of {', '.join(sorted(allowed_suits))}."
-            )
-        normalized_cards.append(code)
-
+    normalized_cards = _normalize_cards(cards)
     params = {"cards": ",".join(normalized_cards)}
     data = await _api_get("new/shuffle/", params=params)
     return _deck_summary(data)
@@ -145,7 +148,7 @@ async def get_deck_state(deck_id: str) -> dict[str, Any]:
 
 
 @server.tool(description="Add specific cards to a named pile.")
-async def add_to_pile(deck_id: str, pile_name: str, cards: List[str]) -> dict[str, Any]:
+async def add_to_pile(deck_id: str, pile_name: str, cards: list[str]) -> dict[str, Any]:
     if not deck_id:
         raise ToolError("A deck_id is required to add cards to a pile.")
     if not pile_name:
@@ -153,7 +156,8 @@ async def add_to_pile(deck_id: str, pile_name: str, cards: List[str]) -> dict[st
     if not cards:
         raise ToolError("Provide at least one card code to add to the pile.")
 
-    params = {"cards": ",".join(cards)}
+    normalized_cards = _normalize_cards(cards)
+    params = {"cards": ",".join(normalized_cards)}
     data = await _api_get(f"{deck_id}/pile/{pile_name}/add/", params=params)
     pile_info = data.get("piles", {}).get(pile_name, {})
     return {
@@ -174,7 +178,7 @@ async def add_to_pile(deck_id: str, pile_name: str, cards: List[str]) -> dict[st
 async def draw_from_pile(
     deck_id: str,
     pile_name: str,
-    cards: List[str] | None = None,
+    cards: list[str] | None = None,
     count: int | None = None,
     position: Literal["top", "bottom", "random"] = "top",
 ) -> dict[str, Any]:
@@ -188,15 +192,19 @@ async def draw_from_pile(
     if normalized_position not in valid_positions:
         raise ToolError("Position must be one of: 'top', 'bottom', or 'random'.")
 
-    if cards and count is not None:
+    if (cards is None or len(cards) == 0) and count is None:
+        raise ToolError("Provide either specific card codes or a count.")
+
+    if cards is not None and count is not None:
         raise ToolError("Provide either specific card codes or a count, not both.")
 
     if cards and normalized_position != "top":
         raise ToolError("Drawing specific cards is only supported from the top of the pile.")
 
-    params: Dict[str, Any] = {}
+    params: dict[str, Any] = {}
     if cards:
-        params["cards"] = ",".join(cards)
+        normalized_cards = _normalize_cards(cards)
+        params["cards"] = ",".join(normalized_cards)
     elif count is not None:
         if count < 1 or count > 52:
             raise ToolError("Count must be between 1 and 52.")
@@ -267,12 +275,13 @@ async def shuffle_pile(deck_id: str, pile_name: str) -> dict[str, Any]:
 async def return_cards(
     deck_id: str,
     pile_name: str | None = None,
-    cards: List[str] | None = None,
+    cards: list[str] | None = None,
 ) -> dict[str, Any]:
     if not deck_id:
         raise ToolError("A deck_id is required to return cards.")
 
-    params = {"cards": ",".join(cards)} if cards else None
+    normalized_cards = _normalize_cards(cards)
+    params = {"cards": ",".join(normalized_cards)} if normalized_cards else None
 
     if pile_name:
         path = f"{deck_id}/pile/{pile_name}/return/"
