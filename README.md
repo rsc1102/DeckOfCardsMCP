@@ -1,8 +1,9 @@
-## Deck of Cards MCP Server
+## 🃏 Deck of Cards MCP Server 
 
 This project exposes the [deckofcardsapi.com](https://deckofcardsapi.com/) endpoints via an MCP server built with [FastMCP](https://gofastmcp.com/).
 
 ### Setup
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager.
 - Install dependencies: `uv sync`
 - Run the server: `uv run python main.py`
 
