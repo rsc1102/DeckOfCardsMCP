@@ -25,7 +25,9 @@ server = FastMCP(
     name="deck-of-cards",
     instructions=(
         "This server wraps the deckofcardsapi.com service. "
-        "Use the tools to create decks, shuffle them, draw cards, and manage piles."
+        "Use the tools to create decks, shuffle them, draw cards, and manage piles. "
+        "Card codes always use two characters: value (A, 2-9, 0 for 10, J, Q, K) followed by suit "
+        "(S, H, D, C)—for example AS, 0H, JD."
     ),
 )
 
@@ -246,10 +248,10 @@ async def shuffle_pile(deck_id: str, pile_name: str) -> ShufflePileSchema:
 
 @server.tool(
     description=(
-        "Return cards to the main deck. If pile_name and cards are omitted, all previously drawn "
-        "cards go back to the deck. If pile_name is provided without cards, the entire pile returns "
-        "to the deck. Provide card codes—optionally with pile_name—to send those exact cards from "
-        "the pile or the drawn set back to the main deck."
+        "Return cards to the main deck. Omitting both pile_name and cards returns every drawn card; "
+        "passing only pile_name returns that entire pile. Provide card codes—optionally with "
+        "pile_name—to send specific cards from the draw stack or a pile back to the deck. Card codes "
+        "must be two characters (e.g. AS, 0H)."
     ),
 )
 async def return_cards(
