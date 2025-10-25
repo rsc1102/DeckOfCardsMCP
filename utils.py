@@ -61,7 +61,7 @@ def _format_cards(cards: list[dict[str, Any]] | None) -> list[CardSchema]:
 
 def _deck_summary(data: dict[str, Any]) -> DeckSchema:
     summary = DeckSchema(
-        deck_id=data["deck_id"], remaining=data["remaining"], shuffled=data.get("shuffled",False)
+        deck_id=data["deck_id"], remaining=data["remaining"], shuffled=data["shuffled"]
     )
     return summary
 

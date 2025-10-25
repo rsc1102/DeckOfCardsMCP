@@ -81,8 +81,9 @@ async def shuffle_deck(
 async def draw_cards(deck_id: str, count: int = 1) -> DrawCardSchema:
     if not deck_id:
         raise ToolError("A deck_id is required to draw cards.")
-    if count < 1 or count > 52:
-        raise ToolError("Count must be between 1 and 52.")
+
+    if count < 1:
+        raise ToolError("Count must be greater than 1.")
 
     data = await _api_get(f"{deck_id}/draw/", params={"count": count})
     deck_summary = _deck_summary(data)
@@ -174,9 +175,7 @@ async def draw_from_pile(
     if cards:
         normalized_cards = _normalize_cards(cards)
         params["cards"] = ",".join(normalized_cards)
-    elif count is not None:
-        if count < 1 or count > 52:
-            raise ToolError("Count must be between 1 and 52.")
+    elif count is not None and count > 1:
         params["count"] = count
     elif normalized_position != "top":
         raise ToolError("Specify count when drawing from the bottom or randomly.")
