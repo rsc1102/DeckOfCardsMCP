@@ -248,8 +248,10 @@ async def shuffle_pile(deck_id: str, pile_name: str) -> ShufflePileSchema:
 
 @server.tool(
     description=(
-        "Return cards to the main deck or a specific pile. "
-        "Provide cards to return specific codes; omit to return everything."
+        "Return cards to the main deck. If pile_name and cards are omitted, all previously drawn "
+        "cards go back to the deck. If pile_name is provided without cards, the entire pile returns "
+        "to the deck. Provide card codes—optionally with pile_name—to send those exact cards from "
+        "the pile or the drawn set back to the main deck."
     ),
 )
 async def return_cards(
@@ -278,7 +280,6 @@ async def return_cards(
     return ReturnCardSchema(
         deck_id=data["deck_id"],
         remaining=data["remaining"],
-        shuffled=data["shuffled"],
         piles=piles,
     )
 
