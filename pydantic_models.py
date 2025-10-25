@@ -50,7 +50,6 @@ class ListPilesSchema(BaseModel):
 
 class DrawCardFromPileSchema(BaseModel):
     deck_id: str
-    remaining: int
     piles: dict[str, PileWithoutCardDetailsSchema]
     cards: list[CardSchema]
 

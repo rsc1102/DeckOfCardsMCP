@@ -192,11 +192,9 @@ async def draw_from_pile(
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
-    deck_summary = _deck_summary(data)
     list_cards = _format_cards(data.get("cards"))
     return DrawCardFromPileSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
         piles=piles,
         cards=list_cards,
     )
@@ -221,10 +219,9 @@ async def list_pile_cards(deck_id: str, pile_name: str) -> ListPilesSchema:
             )
         else:
             piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
-    deck_summary = _deck_summary(data)
     return ListPilesSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 
@@ -242,10 +239,9 @@ async def shuffle_pile(deck_id: str, pile_name: str) -> ShufflePileSchema:
     piles: dict[str, PileWithoutCardDetailsSchema] = {}
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
-    deck_summary = _deck_summary(data)
     return ShufflePileSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 
@@ -274,16 +270,15 @@ async def return_cards(
         path = f"{deck_id}/return/"
 
     data = await _api_get(path, params=params)
-    deck_summary = _deck_summary(data)
     pile_info = data.get("piles", {})
     piles: dict[str, PileWithoutCardDetailsSchema] = {}
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
     return ReturnCardSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
-        shuffled=deck_summary.shuffled,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
+        shuffled=data["shuffled"],
         piles=piles,
     )
 
