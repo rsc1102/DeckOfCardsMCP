@@ -12,7 +12,7 @@ from pydantic_models import (
     PileWithoutCardDetailsSchema,
     ShufflePileSchema,
     ListPilesSchema,
-    PileWithCardDetailsSchema
+    PileWithCardDetailsSchema,
 )
 
 create_deck = create_deck_tool.fn
@@ -61,23 +61,42 @@ async def test_shuffle_pile():
     assert response.remaining == 42
     assert response.piles[pile_name] == PileWithoutCardDetailsSchema(remaining=10)
 
+
 @pytest.mark.asyncio
 async def test_list_cards_in_pile():
     deck_id, pile_name, cards = await generate_new_pile()
-    response = await list_pile_cards(deck_id=deck_id,pile_name=pile_name)
+    response = await list_pile_cards(deck_id=deck_id, pile_name=pile_name)
     assert type(response) is ListPilesSchema
     assert response.remaining == 42
-    assert type(response.piles[pile_name]) is PileWithCardDetailsSchema
-    assert response.piles[pile_name].remaining == 10
-    listed_cards = response.piles[pile_name].cards
+    pile = response.piles[pile_name]
+    assert isinstance(pile, PileWithCardDetailsSchema)
+    assert pile.remaining == 10
+    listed_cards = pile.cards
     encoded_listed_cards = [x.code for x in listed_cards]
     assert set(encoded_listed_cards) == set(cards)
 
 
+@pytest.mark.asyncio
+async def test_transfer_cards_between_piles():
+    deck_id, pile_name, cards = await generate_new_pile()
+    pile2_name = "my_pile_2"
+    response = await add_to_pile(deck_id=deck_id, pile_name=pile2_name, cards=cards[:5])
+    assert type(response) is AddToPileSchema
+    assert response.deck_id == deck_id
+    assert response.remaining == 42
+    assert response.piles[pile_name] == PileWithoutCardDetailsSchema(remaining=5)
+    assert response.piles[pile2_name] == PileWithoutCardDetailsSchema(remaining=5)
 
+    response = await list_pile_cards(deck_id=deck_id, pile_name=pile_name)
+    assert type(response) is ListPilesSchema
+    assert response.remaining == 42
+    pile = response.piles[pile_name]
+    assert isinstance(pile, PileWithCardDetailsSchema)
+    assert pile.remaining == 5
+    listed_cards = pile.cards
+    encoded_listed_cards = [x.code for x in listed_cards]
+    assert set(encoded_listed_cards) <= set(cards)
 
-
-
-
-
-    
+    pile2 = response.piles[pile2_name]
+    assert isinstance(pile2, PileWithoutCardDetailsSchema)
+    assert pile2.remaining == 5
