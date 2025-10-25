@@ -83,15 +83,13 @@ async def draw_cards(deck_id: str, count: int = 1) -> DrawCardSchema:
         raise ToolError("A deck_id is required to draw cards.")
 
     if count < 1:
-        raise ToolError("Count must be greater than 1.")
+        raise ToolError("Count must be greater than 0.")
 
     data = await _api_get(f"{deck_id}/draw/", params={"count": count})
-    deck_summary = _deck_summary(data)
     cards = _format_cards(data.get("cards"))
     return DrawCardSchema(
-        deck_id=deck_summary.deck_id,
-        shuffled=deck_summary.shuffled,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         cards=cards,
     )
 
@@ -131,10 +129,9 @@ async def add_to_pile(
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
-    deck_summary = _deck_summary(data)
     return AddToPileSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 
@@ -175,8 +172,10 @@ async def draw_from_pile(
     if cards:
         normalized_cards = _normalize_cards(cards)
         params["cards"] = ",".join(normalized_cards)
-    elif count is not None and count > 1:
+    elif count is not None and count > 0:
         params["count"] = count
+    elif count is not None and count < 1:
+        raise ToolError("Count must be greater than 0.")
     elif normalized_position != "top":
         raise ToolError("Specify count when drawing from the bottom or randomly.")
 

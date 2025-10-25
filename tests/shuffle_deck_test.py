@@ -34,7 +34,6 @@ async def test_shuffle_remaining_deck():
     response = await draw_cards(deck_id=new_deck_id, count=10)
     assert type(response) is DrawCardSchema
     assert response.remaining == 42
-    assert not response.shuffled
 
     response = await shuffle_deck(deck_id=new_deck_id, shuffle_remaining_only=True)
     assert type(response) is DeckSchema

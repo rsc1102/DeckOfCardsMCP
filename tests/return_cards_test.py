@@ -32,7 +32,6 @@ async def generate_new_pile():
     response = await draw_cards(deck_id=new_deck_id, count=10)
     assert type(response) is DrawCardSchema
     assert response.remaining == 42
-    assert not response.shuffled
 
     drawn_cards = response.cards
     encoded_drawn_cards = [x.code for x in drawn_cards]
@@ -53,7 +52,6 @@ async def test_return_drawn_cards():
     response = await draw_cards(deck_id=deck_id, count=10)
     assert type(response) is DrawCardSchema
     assert response.remaining == 42
-    assert not response.shuffled
     response = await return_cards(deck_id=deck_id)
     assert type(response) is ReturnCardSchema
     assert response.deck_id == deck_id
@@ -66,7 +64,6 @@ async def test_return_specific_drawn_cards():
     response = await draw_cards(deck_id=deck_id, count=10)
     assert type(response) is DrawCardSchema
     assert response.remaining == 42
-    assert not response.shuffled
     drawn_cards = response.cards
     encoded_drawn_cards = [x.code for x in drawn_cards]
 
