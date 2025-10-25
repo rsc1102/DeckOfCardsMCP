@@ -25,7 +25,9 @@ server = FastMCP(
     name="deck-of-cards",
     instructions=(
         "This server wraps the deckofcardsapi.com service. "
-        "Use the tools to create decks, shuffle them, draw cards, and manage piles."
+        "Use the tools to create decks, shuffle them, draw cards, and manage piles. "
+        "Card codes always use two characters: value (A, 2-9, 0 for 10, J, Q, K) followed by suit "
+        "(S, H, D, C)—for example AS, 0H, JD."
     ),
 )
 
@@ -81,16 +83,15 @@ async def shuffle_deck(
 async def draw_cards(deck_id: str, count: int = 1) -> DrawCardSchema:
     if not deck_id:
         raise ToolError("A deck_id is required to draw cards.")
-    if count < 1 or count > 52:
-        raise ToolError("Count must be between 1 and 52.")
+
+    if count < 1:
+        raise ToolError("Count must be greater than 0.")
 
     data = await _api_get(f"{deck_id}/draw/", params={"count": count})
-    deck_summary = _deck_summary(data)
     cards = _format_cards(data.get("cards"))
     return DrawCardSchema(
-        deck_id=deck_summary.deck_id,
-        shuffled=deck_summary.shuffled,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         cards=cards,
     )
 
@@ -130,10 +131,9 @@ async def add_to_pile(
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
-    deck_summary = _deck_summary(data)
     return AddToPileSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 
@@ -174,10 +174,10 @@ async def draw_from_pile(
     if cards:
         normalized_cards = _normalize_cards(cards)
         params["cards"] = ",".join(normalized_cards)
-    elif count is not None:
-        if count < 1 or count > 52:
-            raise ToolError("Count must be between 1 and 52.")
+    elif count is not None and count > 0:
         params["count"] = count
+    elif count is not None and count < 1:
+        raise ToolError("Count must be greater than 0.")
     elif normalized_position != "top":
         raise ToolError("Specify count when drawing from the bottom or randomly.")
 
@@ -192,11 +192,9 @@ async def draw_from_pile(
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
-    deck_summary = _deck_summary(data)
     list_cards = _format_cards(data.get("cards"))
     return DrawCardFromPileSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
         piles=piles,
         cards=list_cards,
     )
@@ -221,10 +219,9 @@ async def list_pile_cards(deck_id: str, pile_name: str) -> ListPilesSchema:
             )
         else:
             piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
-    deck_summary = _deck_summary(data)
     return ListPilesSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 
@@ -242,18 +239,19 @@ async def shuffle_pile(deck_id: str, pile_name: str) -> ShufflePileSchema:
     piles: dict[str, PileWithoutCardDetailsSchema] = {}
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
-    deck_summary = _deck_summary(data)
     return ShufflePileSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 
 
 @server.tool(
     description=(
-        "Return cards to the main deck or a specific pile. "
-        "Provide cards to return specific codes; omit to return everything."
+        "Return cards to the main deck. Omitting both pile_name and cards returns every drawn card; "
+        "passing only pile_name returns that entire pile. Provide card codes—optionally with "
+        "pile_name—to send specific cards from the draw stack or a pile back to the deck. Card codes "
+        "must be two characters (e.g. AS, 0H)."
     ),
 )
 async def return_cards(
@@ -274,16 +272,14 @@ async def return_cards(
         path = f"{deck_id}/return/"
 
     data = await _api_get(path, params=params)
-    deck_summary = _deck_summary(data)
     pile_info = data.get("piles", {})
     piles: dict[str, PileWithoutCardDetailsSchema] = {}
     for key, val in pile_info.items():
         piles[key] = PileWithoutCardDetailsSchema(remaining=val["remaining"])
 
     return ReturnCardSchema(
-        deck_id=deck_summary.deck_id,
-        remaining=deck_summary.remaining,
-        shuffled=deck_summary.shuffled,
+        deck_id=data["deck_id"],
+        remaining=data["remaining"],
         piles=piles,
     )
 

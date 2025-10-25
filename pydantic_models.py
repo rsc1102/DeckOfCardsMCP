@@ -18,7 +18,6 @@ class DrawCardSchema(BaseModel):
     deck_id: str
     cards: list[CardSchema]
     remaining: int
-    shuffled: bool
 
 
 class PileWithoutCardDetailsSchema(BaseModel):
@@ -50,13 +49,11 @@ class ListPilesSchema(BaseModel):
 
 class DrawCardFromPileSchema(BaseModel):
     deck_id: str
-    remaining: int
     piles: dict[str, PileWithoutCardDetailsSchema]
     cards: list[CardSchema]
 
 
 class ReturnCardSchema(BaseModel):
     deck_id: str
-    shuffled: bool
     remaining: int
     piles: dict[str, PileWithoutCardDetailsSchema]
