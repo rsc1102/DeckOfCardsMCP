@@ -1,9 +1,9 @@
 import pytest
-from main import create_deck as create_deck_tool
-from main import draw_cards as draw_cards_tool
-from main import add_to_pile as add_to_pile_tool
-from main import return_cards as return_cards_tool
-from pydantic_models import (
+from src.main import create_deck as create_deck_tool
+from src.main import draw_cards as draw_cards_tool
+from src.main import add_to_pile as add_to_pile_tool
+from src.main import return_cards as return_cards_tool
+from src.pydantic_models import (
     DeckSchema,
     DrawCardSchema,
     AddToPileSchema,
