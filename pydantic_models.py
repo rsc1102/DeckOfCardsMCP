@@ -56,6 +56,5 @@ class DrawCardFromPileSchema(BaseModel):
 
 class ReturnCardSchema(BaseModel):
     deck_id: str
-    shuffled: bool
     remaining: int
     piles: dict[str, PileWithoutCardDetailsSchema]
