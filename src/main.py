@@ -27,7 +27,7 @@ server = FastMCP(
         "This server wraps the deckofcardsapi.com service. "
         "Use the tools to create decks, shuffle them, draw cards, and manage piles. "
         "Card codes always use two characters: value (A, 2-9, 0 for 10, J, Q, K) followed by suit "
-        "(S, H, D, C)—for example AS, 0H, JD."
+        "(S, H, D, C)—for example AS, 0H, JD. Jokers are not supported. Piles do not work with multiple decks."
     ),
 )
 
