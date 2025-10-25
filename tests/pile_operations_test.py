@@ -1,11 +1,11 @@
 import pytest
-from main import create_deck as create_deck_tool
-from main import draw_cards as draw_cards_tool
-from main import add_to_pile as add_to_pile_tool
-from main import draw_from_pile as draw_from_pile_tool
-from main import shuffle_pile as shuffle_pile_tool
-from main import list_pile_cards as list_pile_cards_tool
-from pydantic_models import (
+from src.main import create_deck as create_deck_tool
+from src.main import draw_cards as draw_cards_tool
+from src.main import add_to_pile as add_to_pile_tool
+from src.main import draw_from_pile as draw_from_pile_tool
+from src.main import shuffle_pile as shuffle_pile_tool
+from src.main import list_pile_cards as list_pile_cards_tool
+from src.pydantic_models import (
     DeckSchema,
     DrawCardSchema,
     AddToPileSchema,

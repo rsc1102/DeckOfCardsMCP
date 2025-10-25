@@ -3,7 +3,7 @@ import re
 import httpx
 from fastmcp.exceptions import ToolError
 from typing import Any
-from pydantic_models import DeckSchema, CardSchema
+from src.pydantic_models import DeckSchema, CardSchema
 
 
 BASE_URL = "https://deckofcardsapi.com/api/deck"
