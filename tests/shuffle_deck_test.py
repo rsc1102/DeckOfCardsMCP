@@ -1,7 +1,7 @@
 import pytest
-from src.main import create_deck as create_deck_tool
-from src.main import shuffle_deck as shuffle_deck_tool
-from src.main import draw_cards as draw_cards_tool
+from src.server import create_deck as create_deck_tool
+from src.server import shuffle_deck as shuffle_deck_tool
+from src.server import draw_cards as draw_cards_tool
 from src.pydantic_models import DeckSchema, DrawCardSchema
 
 create_deck = create_deck_tool.fn

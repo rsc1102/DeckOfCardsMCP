@@ -1,7 +1,7 @@
 import pytest
-from src.main import create_deck as create_deck_tool
-from src.main import create_partial_deck as create_partial_deck_tool
-from src.main import get_deck_state as get_deck_state_tool
+from src.server import create_deck as create_deck_tool
+from src.server import create_partial_deck as create_partial_deck_tool
+from src.server import get_deck_state as get_deck_state_tool
 from src.pydantic_models import DeckSchema
 
 create_deck = create_deck_tool.fn

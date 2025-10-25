@@ -284,9 +284,4 @@ async def return_cards(
     )
 
 
-def main() -> None:
-    server.run(transport="http")
 
-
-if __name__ == "__main__":
-    main()
