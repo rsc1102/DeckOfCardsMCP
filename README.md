@@ -7,7 +7,8 @@ Cloud Hosting Link: [https://fastmcp.cloud/app/deck-of-cards](https://fastmcp.cl
 ### Local Setup
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager.
 - Install dependencies: `uv sync`
-- Run the server: `uv run python main.py`
+- Run the server: `bash run.sh server`
+- Run tests: `bash run.sh tests`
 
 ### Available tools
 - `create_deck`: Create a new deck, optionally combining multiple decks.
